@@ -23,7 +23,7 @@ public class TerrainMapMaker : MonoBehaviour
     
     float[,] height;
     public const int mapSizeX = 100, mapSizeY = 100;
-    public const int mapResolution = 2;
+    public const int mapResolution = 10;
     public Texture2D texture;
     
     void Awake()
@@ -41,6 +41,22 @@ public class TerrainMapMaker : MonoBehaviour
         }
 
         DrawMapObjects();
+        DrawCurveObjects();
+    }
+
+    void DrawCurveObjects()
+    {
+        BezierCurve[] allBezierCurves = FindObjectsOfType(typeof(BezierCurve)) as BezierCurve[];
+        foreach(BezierCurve c in allBezierCurves)
+        {
+            foreach(Vector3 v in c.curvePoints)
+            {
+                texture.SetPixel((int)v.x * mapResolution, (int)v.z * mapResolution, Color.black);
+            }
+            
+        }
+
+        texture.Apply();
     }
 
     void DrawFoliage()
@@ -79,6 +95,49 @@ public class TerrainMapMaker : MonoBehaviour
         
     }
 
+    bool AnyNearbyContourPoints(List<ContourPoint> contourPoints, int currentIndex)
+    {
+        for(int i = 0; i < contourPoints.Count; i++)
+        {
+            if(i != currentIndex)
+            {
+                //if((contourPoints[i].x >= contourPoints[currentIndex].x - 1 && contourPoints[i].x <= contourPoints[currentIndex].x + 1) && (contourPoints[i].y >= contourPoints[currentIndex].y - 1 && contourPoints[i].y <= contourPoints[currentIndex].y + 1))
+                //{
+                //    return true;
+                //}
+
+                if(contourPoints[i].x == contourPoints[currentIndex].x && (contourPoints[i].y >= contourPoints[currentIndex].y - 1 && contourPoints[i].y <= contourPoints[currentIndex].y + 1))
+                {
+                    return true;
+                }
+
+                if (contourPoints[i].y == contourPoints[currentIndex].y && (contourPoints[i].x >= contourPoints[currentIndex].x - 1 && contourPoints[i].x <= contourPoints[currentIndex].x + 1))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool AnyNearbyEmpty(List<ContourPoint> contourPoints, int currentIndex)
+    {
+        int amountOfEmpty = 0;
+        for(int x = -1; x <= 1; x++){
+            for(int y = -1; y <= 1; y++)
+            {
+
+            }
+        }
+
+        if(amountOfEmpty == 0){
+            return false;
+        }
+
+        return true;
+    }
+
     void DrawContours(float heightAt)
     {
         height = new float[mapSizeX * mapResolution, mapSizeY * mapResolution];
@@ -91,14 +150,33 @@ public class TerrainMapMaker : MonoBehaviour
         List<ContourPoint> contourPoints = new List<ContourPoint>();
         for(int x = 0; x < mapSizeX * mapResolution; x++){
             for(int y = 0; y < mapSizeY * mapResolution; y++){
-                if(height[x, y] > heightAt - 0.1f && height[x, y] < heightAt + 0.1f)
+                if(height[x, y] > heightAt - 0.05f && height[x, y] < heightAt + 0.05f)
                 {
                     contourPoints.Add(new ContourPoint(x, y));
                 }
             }
         }
 
-        for(int i = 0; i < contourPoints.Count; i++)
+        //Clear out nearly spaced points
+        for (int i = 0; i < contourPoints.Count; i++)
+        {
+            if (AnyNearbyContourPoints(contourPoints, i))
+            {
+                //contourPoints.RemoveAt(i);
+                //i--;
+            }
+        }
+
+        for(int i = 0; i < 10; i++)
+        {
+            if(AnyNearbyEmpty(contourPoints, i)){
+                //contourPoints.RemoveAt(i);
+                //i--;
+            }
+        }
+
+        /*
+        for (int i = 0; i < contourPoints.Count; i++)
         {
             if(!contourPoints[i].partOfCont && !contourPoints[i].startOfCont)
             {
@@ -111,6 +189,7 @@ public class TerrainMapMaker : MonoBehaviour
                 texture.Apply();
             }
         }
+        */
 
         foreach(ContourPoint c in contourPoints){
             texture.SetPixel(c.x, c.y, Color.green);
@@ -147,53 +226,6 @@ public class TerrainMapMaker : MonoBehaviour
         return true;
     }
 
-/*
-    void DrawContours(float heightAt)
-    {
-        height = new float[mapSizeX * mapResolution, mapSizeY * mapResolution];
-        for(int x = 0; x < mapSizeX * mapResolution; x++){
-            for(int y = 0; y < mapSizeY * mapResolution; y++){
-                height[x, y] = currentTerrain.SampleHeight(new Vector3((float)x / mapResolution, 0, (float)y / mapResolution));
-            }
-        }
-
-        List<ContourPoint> contourPoints = new List<ContourPoint>();
-        for(int x = 0; x < mapSizeX * mapResolution; x++){
-            for(int y = 0; y < mapSizeY * mapResolution; y++){
-                if(height[x, y] > heightAt - 0.1f && height[x, y] < heightAt + 0.1f)
-                {
-                    contourPoints.Add(new ContourPoint(x, y));
-                    contourPoints[contourPoints.Count - 1].connectedTo = new ContourPoint(-1, -1);
-                }
-            }
-        }
-
-        for(int i = 0; i < contourPoints.Count; i++)
-        {
-            if(contourPoints[i].connections != 2)
-            {
-                int closestIndex = FindClosestContourPoint(contourPoints, i);
-                if(closestIndex != -1)
-                {
-                    DrawLine(contourPoints[closestIndex], contourPoints[i]);
-                    contourPoints[i].connections++;
-                    contourPoints[closestIndex].connections++;
-                    contourPoints[i].connectedTo = contourPoints[closestIndex];
-                    contourPoints[closestIndex].connectedTo = contourPoints[i];
-                    i--;
-                }
-            }
-        }
-
-        foreach(ContourPoint c in contourPoints){
-            texture.SetPixel(c.x, c.y, Color.green);
-        }
-
-        texture.Apply();
-    }
-
-    */
-
     int FindClosestContourPoint(List<ContourPoint> contourPoints, int current)
     {
         int closestIndex = -1;
@@ -228,29 +260,14 @@ public class TerrainMapMaker : MonoBehaviour
                 float positionX = c.gameObject.transform.position.x;
                 float positionY = c.gameObject.transform.position.z;
 
-                Color[,] objectTexture = new Color[64, 64];
-                for(int x = 0; x < 64; x++){
-                    for(int y = 0; y < 64; y++){
-                        objectTexture[x, y] = c.mapTexture.GetPixel(x, y);
+                Color[,] objectTexture = c.mapTexturePixels();     
+                for(int x = 0; x < c.mapTextureWidth; x++){
+                    for(int y = 0; y < c.mapTextureHeight; y++){
+                        texture.SetPixel((int)positionX * mapResolution  + x - c.mapTextureWidth/2, (int)positionY * mapResolution + y - c.mapTextureHeight/2, objectTexture[x, y]);
                     }
                 }
-
-                for(int x = 0; x < 64; x++){
-                    for(int y = 0; y < 64; y++){
-                        texture.SetPixel((int)positionX + x - 32, (int)positionY + y - 32, objectTexture[x, y]);
-                    }
-                }
-
-               
-                Debug.Log("Object at: " + positionX + " " + positionY);
             }
         }
         texture.Apply();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }
