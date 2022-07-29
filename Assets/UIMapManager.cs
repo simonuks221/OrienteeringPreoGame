@@ -16,6 +16,6 @@ public class UIMapManager : MonoBehaviour
     }
     void Update()
     {
-        mapImageComponent.sprite = Sprite.Create(TerrainMapMaker.Instance.texture, new Rect(0, 0, 100, 100), new Vector2(0.5f, 0.5f));
+        mapImageComponent.sprite = Sprite.Create(TerrainMapMaker.Instance.texture, new Rect(0, 0, TerrainMapMaker.mapSizeX * TerrainMapMaker.mapResolution, TerrainMapMaker.mapSizeY * TerrainMapMaker.mapResolution), new Vector2(0.5f, 0.5f));
     }
 }

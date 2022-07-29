@@ -1,4 +1,3 @@
-using System.Transactions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,7 +6,8 @@ using UnityEngine;
 public class ContourPoint{
     public int x, y;
     public int connections = 0;
-    public ContourPoint connectedTo;
+    public bool startOfCont = false;
+    public bool partOfCont = false;
 
     public ContourPoint(int _x, int _y){
         x = _x;
@@ -22,8 +22,8 @@ public class TerrainMapMaker : MonoBehaviour
     Terrain currentTerrain;
     
     float[,] height;
-    const int mapSizeX = 100, mapSizeY = 100;
-    const int mapResolution = 1;
+    public const int mapSizeX = 100, mapSizeY = 100;
+    public const int mapResolution = 2;
     public Texture2D texture;
     
     void Awake()
@@ -55,7 +55,7 @@ public class TerrainMapMaker : MonoBehaviour
         foreach(TreeInstance t in treeInstances){
             for(int xx = -3; xx < 3; xx++){
                 for(int yy = -3; yy < 3; yy++){
-                    texture.SetPixel((int)(t.position.x * mapSizeX + xx), (int)(t.position.z * mapSizeY + yy), Color.white);
+                    texture.SetPixel((int)(t.position.x * mapSizeX * mapResolution + xx), (int)(t.position.z * mapSizeY * mapResolution + yy), Color.white);
                 }
             }
         }
@@ -79,6 +79,75 @@ public class TerrainMapMaker : MonoBehaviour
         
     }
 
+    void DrawContours(float heightAt)
+    {
+        height = new float[mapSizeX * mapResolution, mapSizeY * mapResolution];
+        for(int x = 0; x < mapSizeX * mapResolution; x++){
+            for(int y = 0; y < mapSizeY * mapResolution; y++){
+                height[x, y] = currentTerrain.SampleHeight(new Vector3((float)x / mapResolution, 0, (float)y / mapResolution));
+            }
+        }
+
+        List<ContourPoint> contourPoints = new List<ContourPoint>();
+        for(int x = 0; x < mapSizeX * mapResolution; x++){
+            for(int y = 0; y < mapSizeY * mapResolution; y++){
+                if(height[x, y] > heightAt - 0.1f && height[x, y] < heightAt + 0.1f)
+                {
+                    contourPoints.Add(new ContourPoint(x, y));
+                }
+            }
+        }
+
+        for(int i = 0; i < contourPoints.Count; i++)
+        {
+            if(!contourPoints[i].partOfCont && !contourPoints[i].startOfCont)
+            {
+                contourPoints[i].startOfCont = true;
+                if(!FindNextContourSegment(contourPoints, i))
+                {
+                    Debug.LogError("Couldn't successfully draw connecting contour line");
+                    return;
+                }
+                texture.Apply();
+            }
+        }
+
+        foreach(ContourPoint c in contourPoints){
+            texture.SetPixel(c.x, c.y, Color.green);
+        }
+
+        texture.Apply();
+    }
+
+    bool FindNextContourSegment(List<ContourPoint> contourPoints, int currentIndex)
+    {
+        int closestContourIndex = FindClosestContourPoint(contourPoints, currentIndex);
+        if(closestContourIndex != -1)
+        {
+            contourPoints[closestContourIndex].partOfCont = true;
+            DrawLine(contourPoints[currentIndex], contourPoints[closestContourIndex]);
+            texture.Apply();
+            if(contourPoints[closestContourIndex].startOfCont)
+            {
+                return true;
+            }
+            else
+            {
+                if(!FindNextContourSegment(contourPoints, closestContourIndex))
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+/*
     void DrawContours(float heightAt)
     {
         height = new float[mapSizeX * mapResolution, mapSizeY * mapResolution];
@@ -123,27 +192,32 @@ public class TerrainMapMaker : MonoBehaviour
         texture.Apply();
     }
 
+    */
+
     int FindClosestContourPoint(List<ContourPoint> contourPoints, int current)
     {
         int closestIndex = -1;
         float closestDistance = 10000000;
         for(int i = 0; i < contourPoints.Count; i++)
         {
-            if(contourPoints[i].connections != 2 && i != current)
-            {
-                if(contourPoints[i].connectedTo.x != contourPoints[current].x && contourPoints[i].connectedTo.y != contourPoints[current].y)
+                if(i != current && !contourPoints[i].partOfCont)
                 {
                     float dist = MathF.Sqrt(MathF.Pow(contourPoints[i].x - contourPoints[current].x, 2)+ MathF.Pow(contourPoints[i].y - contourPoints[current].y, 2));
+                    if (contourPoints[i].startOfCont)
+                    {
+                        dist *= 2;
+                    }
                     if(dist < closestDistance){
                         closestDistance = dist;
                         closestIndex = i;
                     }
                 }
-            }
         }
 
         return closestIndex;
     }
+
+    
 
     void DrawMapObjects()
     {
