@@ -49,10 +49,14 @@ public class TerrainMapMaker : MonoBehaviour
         BezierCurve[] allBezierCurves = FindObjectsOfType(typeof(BezierCurve)) as BezierCurve[];
         foreach(BezierCurve c in allBezierCurves)
         {
-            foreach(Vector3 v in c.curvePoints)
+            for(int i = 1; i < c.curvePoints.Count; i += 2)
             {
-                texture.SetPixel((int)v.x * mapResolution, (int)v.z * mapResolution, Color.black);
+                DrawLine(new ContourPoint((int)c.curvePoints[i].x * mapResolution, (int)c.curvePoints[i].z* mapResolution), new ContourPoint((int)c.curvePoints[i-1].x* mapResolution, (int)c.curvePoints[i-1].z* mapResolution), 3f);
             }
+
+            
+                //texture.SetPixel((int)v.x * mapResolution, (int)v.z * mapResolution, Color.black);
+            
             
         }
 
@@ -79,20 +83,31 @@ public class TerrainMapMaker : MonoBehaviour
         texture.Apply();
     }
 
-    void DrawLine(ContourPoint p1, ContourPoint p2)
+    void DrawLine(ContourPoint p1, ContourPoint p2, float wd)
     {
-        float frac = 1/MathF.Sqrt(MathF.Pow(p2.x - p1.x, 2)+ MathF.Pow(p2.y - p1.y, 2));
-        float ctr = 0;
-
-        float tx = 0;
-        float ty = 0;
-        while(tx != p2.x || ty != p2.y){
-            tx = Mathf.Lerp(p1.x, p2.x, ctr);
-            ty = Mathf.Lerp(p1.y, p2.y, ctr);
-            ctr += frac;
-            texture.SetPixel((int)tx, (int)ty, Color.red);
+        Color color = Color.red;
+        int dx = (int)MathF.Abs(p2.x-p1.x), sx = p1.x < p2.x ? 1 : -1; 
+        int dy = (int)MathF.Abs(p2.y-p1.y), sy = p1.y < p2.y ? 1 : -1; 
+        int err = dx-dy, e2, x2, y2;                          /* error value e_xy */
+        float ed = dx+dy == 0 ? 1 : MathF.Sqrt((float)dx*dx+(float)dy*dy);
+    
+        for (wd = (wd+1)/2; ; ) {                                   /* pixel loop */
+            texture.SetPixel(p1.x, p1.y, color);
+            e2 = err; x2 = p1.x;
+            if (2*e2 >= -dx) {                                           /* x step */
+                for (e2 += dy, y2 = p1.y; e2 < ed*wd && (p2.y != y2 || dx > dy); e2 += dx)
+                    texture.SetPixel(p1.x, y2 += sy, color);
+                if (p1.x == p2.x) break;
+                e2 = err; err -= dy; p1.x += sx; 
+            } 
+            if (2*e2 <= dy) {                                            /* y step */
+                for (e2 = dx-e2; e2 < ed*wd && (p2.x != x2 || dx < dy); e2 += dy)
+                    texture.SetPixel(x2 += sx, p1.y, color);
+                if (p1.y == p2.y) break;
+                err += dx; p1.y += sy; 
+            }
         }
-        
+        texture.Apply();
     }
 
     bool AnyNearbyContourPoints(List<ContourPoint> contourPoints, int currentIndex)
@@ -204,7 +219,7 @@ public class TerrainMapMaker : MonoBehaviour
         if(closestContourIndex != -1)
         {
             contourPoints[closestContourIndex].partOfCont = true;
-            DrawLine(contourPoints[currentIndex], contourPoints[closestContourIndex]);
+            DrawLine(contourPoints[currentIndex], contourPoints[closestContourIndex], 10);
             texture.Apply();
             if(contourPoints[closestContourIndex].startOfCont)
             {
