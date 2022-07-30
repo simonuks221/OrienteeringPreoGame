@@ -5,11 +5,9 @@ using UnityEditor;
 
 public class BezierCurve : MonoBehaviour
 {
-    [SerializeField]
-    float pointPerUnits = 10;
+    public float pointPerUnits = 10;
     [SerializeField]
     List<Transform> curveTransforms = new List<Transform>();
-
     public List<Vector3> curvePoints = new List<Vector3>();
 
 

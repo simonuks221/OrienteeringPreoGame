@@ -46,15 +46,17 @@ public class TerrainMapMaker : MonoBehaviour
 
     void DrawCurveObjects()
     {
-        BezierCurve[] allBezierCurves = FindObjectsOfType(typeof(BezierCurve)) as BezierCurve[];
-        foreach(BezierCurve c in allBezierCurves)
+        BaseCurveMapObject[] allCurveObjects = FindObjectsOfType(typeof(BaseCurveMapObject)) as BaseCurveMapObject[];
+        foreach(BaseCurveMapObject c in allCurveObjects)
         {
-            for(int i = 1; i < c.curvePoints.Count; i += 2)
+            PathMapObject p = c as PathMapObject;
+            if(p != null) //Path object
             {
-                DrawLine(new ContourPoint((int)c.curvePoints[i].x * mapResolution, (int)c.curvePoints[i].z* mapResolution), new ContourPoint((int)c.curvePoints[i-1].x* mapResolution, (int)c.curvePoints[i-1].z* mapResolution), 3f);
+                for(int i = 1; i < p.bezierCurve.curvePoints.Count; i += 2)
+                {
+                    DrawLine(new ContourPoint((int)p.bezierCurve.curvePoints[i].x * mapResolution, (int)p.bezierCurve.curvePoints[i].z* mapResolution), new ContourPoint((int)p.bezierCurve.curvePoints[i-1].x* mapResolution, (int)p.bezierCurve.curvePoints[i-1].z* mapResolution), p.pathWidth);
+                }
             }
-
-            
                 //texture.SetPixel((int)v.x * mapResolution, (int)v.z * mapResolution, Color.black);
             
             

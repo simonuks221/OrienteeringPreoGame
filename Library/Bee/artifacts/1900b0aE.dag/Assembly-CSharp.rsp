@@ -336,8 +336,12 @@
 -r:"Library/Bee/artifacts/1900b0aE.dag/UnityEngine.UI.ref.dll"
 "Assets/BaseMapObject.cs"
 "Assets/ControlPointObject.cs"
+"Assets/Curvesss/BaseCurveMapObject.cs"
 "Assets/Curvesss/BezierCurve.cs"
+"Assets/Curvesss/PathMapObject.cs"
+"Assets/PlayerCameraController.cs"
 "Assets/PlayerManager.cs"
+"Assets/PlayerMovementController.cs"
 "Assets/TerrainMapMaker.cs"
 "Assets/UIMapManager.cs"
 -langversion:9.0

@@ -42,6 +42,10 @@
      <Compile Include="Assets\UIMapManager.cs" />
      <Compile Include="Assets\ControlPointObject.cs" />
      <Compile Include="Assets\Curvesss\BezierCurve.cs" />
+     <Compile Include="Assets\Curvesss\PathMapObject.cs" />
+     <Compile Include="Assets\Curvesss\BaseCurveMapObject.cs" />
+     <Compile Include="Assets\PlayerCameraController.cs" />
+     <Compile Include="Assets\PlayerMovementController.cs" />
     <Reference Include="UnityEngine">
         <HintPath>C:\Program Files\2021.3.6f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>

@@ -10,4 +10,9 @@ public class PlayerManager : MonoBehaviour
     void Awake(){
         Instance = this;
     }
+
+    void Update()
+    {
+        
+    }
 }
